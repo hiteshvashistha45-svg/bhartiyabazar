@@ -1,0 +1,56 @@
+You are a senior full-stack dev. Build FINAL PWA "Bhartiya Bazar - Har Zila, Har Dukaan" - React + Vite + Tailwind + Firebase (Auth, Firestore, Storage, Functions) + recharts + papaparse + @hello-pangea/dnd. Mobile-first, 100% working. Theme Saffron #FF6B00, White, Green #138808.
+
+RENAME: Use "Bhartiya Bazar" everywhere. Do NOT use "Bharat Bazaar".
+
+SETUP: Enable PHONE + EMAIL/PASSWORD Auth. Firestore Rules testing: allow read, write: if true;
+Collections: categories, shops, orders, consumers, profile_edit_requests, admin_sessions, settings/appConfig
+
+SCHEMA:
+settings/appConfig: { commissionPercent: number default 5 }
+categories/{id}: {mainCategoryName, icon emoji, color hex, subCategories:[string], createdAt}
+shops/{id}: {name, ownerName, phone, photos[5 urls], gstNumber, status pending/approved/rejected, mainCategory, subCategory, products:[{productName, price number, mrp, stock number, inStock bool, unit bag/kg/pcs, photo downloadURL}], state, district, address, lat, lng, rating number default 4.5, reviewsCount, isTop bool, topPriority, isPaid bool, paidTill, timing:{openTime, closeTime, is24Hours, weeklyOff, isOpenNow, lastToggledAt}, createdAt}
+orders/{id}: {customer:{name,phone,address,lat,lng}, shopId, shopName, products:[], totalAmount, commissionAmount, shopWillGet, status New/Accepted/Packed/Out for Delivery/Delivered/Rejected, payment:{mode UPI/COD, paymentStatus PAID/COD_PENDING/FAILED}, createdAt}
+consumers/{id}: {name, phone, district, joinedAt, wishlist:[]}
+profile_edit_requests/{id}: {shopId, shopPhone, shopName, ownerName, oldData:{}, newData:{name, ownerName, address, state, district, mainCategory, subCategory, gstNumber, photos, timing}, status pending/approved/rejected, requestedAt serverTimestamp(), reviewedAt}
+
+--- CUSTOMER PWA / ---
+Login Bottom Sheet OTP + Guest. Home GPS + State/District + Search autocomplete from products.productName + Categories Grid FROM categories dynamic icon+color. Filters Row Low-High High-Low Nearby Open Now In Stock ⭐ Rating High to Low sort rating desc. Shop Card photo product.photo price stock GREEN/RED timing rating badge "⭐ 4.8" default 4.5 GST tick Call/WhatsApp/Direction + Wishlist Heart 🤍 -> save localStorage + consumers wishlist Red ❤️ if saved. Product Page photo slider [+] [-] BUY disabled if!isOpenNow Wishlist toggle [💬 Price Puchho] wa.me/{shopPhone}?text=... [📞 Call]. Cart Yellow #FFCC00 -> /cart -> /checkout UPI Razorpay createRazorpayOrder + COD -> /my-orders timeline + /wishlist page.
+
+--- SHOPKEEPER /my-shop ---
+Login Phone+Pass/OTP fetch shops where phone==loginPhone If none -> /add-shop State District MainCategory from categories SubCategory Map lat/lng GST 5 Photos timing -> pending screen.
+If approved: TOP BIG TOGGLE OPEN Green / CLOSED Red -> isOpenNow + Top Right [⚙️ Edit Profile] -> /my-shop/profile
+
+PROFILE EDIT WITH ADMIN APPROVAL MUST:
+- /my-shop/profile Page: Form Shop Name, Owner, Address, State/District dropdown All India, MainCategory dropdown FROM categories, SubCategory filtered, GST, 5 Photos upload Gallery [📁] + Camera [📷 capture=environment] preview, Timing open close weeklyOff is24Hours, Phone readonly.
+- On [Save Changes] -> DO NOT update shops doc directly. Create doc in profile_edit_requests: {shopId, shopPhone, shopName old, ownerName, oldData: current shop data snapshot, newData: {name, ownerName, address, state, district, mainCategory, subCategory, gstNumber, photos, timing}, status:"pending", requestedAt: serverTimestamp()}. Toast "Profile update request admin ko bhej diya gaya hai, approval ke baad update hoga".
+- Dashboard banner if pending request exists onSnapshot where shopId==myShopId status pending -> Yellow banner "Profile Edit Pending - Admin approval ka wait hai ⏳". Edit button disabled if already pending.
+
+My Products: Add Modal Name Price MRP Stock Unit In Stock Toggle PHOTO MUST Gallery input file accept image/* + Camera capture environment preview URL.createObjectURL progress uploadBytesResumable Storage shops/{shopId}/products/{Date.now()}_name getDownloadURL product.photo compress <500KB Validation "Product ki photo zaruri hai" Edit Change/Remove.
+
+IMPORTANT COMMISSION LOGIC FOR PRODUCT:
+- Fetch commissionPercent from settings/appConfig doc (default 5).
+- In Add Product Modal, when price > 0, show live box BELOW price input:
+  "💰 Online order pe aapko milega: ₹{price - (price*commissionPercent/100)} (₹{price*commissionPercent/100} Bhartiya Bazar commission {commissionPercent}%) Ye sirf Online UPI Payment pe katega, COD pe nahi."
+- This box should be hidden initially, only show after price entered.
+- On Orders: If payment.mode==UPI show: Order: ₹total, Commission ({commissionPercent}%): -₹commission, Aapko Milega: ₹(total-commission). If COD show: Order: ₹total, Aapko Milega: ₹total (COD - Commission nahi)
+
+Orders ting.mp3 onSnapshot New Tabs NEW Red Dot ACCEPTED etc.
+
+--- ADMIN /admin Dark Mode Shopify + 4 CHARTS + PROFILE EDIT APPROVAL ---
+Login Email+OTP admin_sessions limit 3.
+DASHBOARD TOP: Commission Control Box: [Commission % : Input [5] % ] [Save Button] -> save to settings/appConfig doc field commissionPercent. This percent used everywhere.
+
+4 CHARTS recharts onSnapshot skeleton:
+1 LIVE SALES LineChart PAID vs COD 7 days Lines #138808 #FFCC00 Card Today Week Filters Today/7Days/30Days/State/District
+2 COMMISSION BarChart (total * (commissionPercent/100)) dynamic from settings, NOT hardcoded 0.05, X District Top10 Y Commission #FF6B00
+3 SUBSCRIPTION Pie Paid vs Free vs Pending + Area Monthly
+4 ZILA WISE REPORT BarChart Title "Zila Wise Report - All India" X District Top15 Y Count 2 Bars Consumers Blue #3B82F6 + Shops #FF6B00 Card Total Consumers Shops Top District Filter All India/State Wise
+
+BELOW: Cards Shops Verified Paid Orders Revenue. Categories CRUD. Shops 3 TABS APPROVED/PENDING Blinking/REJECTED.
+
+NEW MENU "Profile Edit Requests" with Bell pending count:
+Sidebar item [📝 Profile Edits (3) Pending] Yellow dot. Page Table: Shop Name | Phone | District | Old Data vs New Data side-by-side diff highlight green new | Photos old vs new comparison | Time Ago. Actions [APPROVE ✅] -> on click update shops/{shopId} with newData fields (name, ownerName, address, state, district, mainCategory, subCategory, gstNumber, photos, timing) keep status approved + update profile_edit_requests status approved reviewedAt now + toast. [REJECT ❌] -> open reason modal input + status rejected. Real-time onSnapshot where status pending Yellow blinking row.
+
+Rest: Paid Ads isTop drag&drop topPriority, Stock low<10, Comments pending_reviews<=3, Orders Analytics CSV papaparse Excel All India/State>District, Bulk SMS/WhatsApp.
+
+Tech: papaparse @hello-pangea/dnd recharts rzp_test_xxxx Function createRazorpayOrder No hardcoded categories. Use commissionPercent from settings/appConfig everywhere instead of 0.05.

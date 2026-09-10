@@ -1,0 +1,23 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Check, Copy, Download, Gift, IndianRupee, Link2, MessageCircle, Share2, Users } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
+import { toast } from "sonner";
+import { Link } from "wouter";
+import { getAppConfig, getPersistedReferralCode } from "@/firebase/referrals";
+import "../referral.css";
+
+const demoReferralCode = "BB1234";
+const referralLink = (code: string) => `https://bhartiyabazar.com?ref=${code}`;
+
+export default function ReferralPage() {
+  const qrRef = useRef<HTMLCanvasElement>(null);
+  const [code, setCode] = useState(getPersistedReferralCode() || demoReferralCode);
+  const [bonus, setBonus] = useState(20);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { getAppConfig().then(c => setBonus(c.referralBonus)).catch(() => undefined); }, []);
+  const link = useMemo(() => referralLink(code), [code]);
+  const copyLink = async () => { await navigator.clipboard?.writeText(link); setCopied(true); toast.success("Referral link copied"); setTimeout(() => setCopied(false), 1800); };
+  const downloadQr = () => { const canvas = qrRef.current; if (!canvas) return; const a = document.createElement("a"); a.download = `bhartiya-bazar-${code}.png`; a.href = canvas.toDataURL("image/png"); a.click(); };
+  return <div className="referral-page"><header className="referral-header"><Link href="/" className="back-btn"><ArrowLeft size={18} /></Link><div><span className="eyebrow">GROW TOGETHER</span><h1>Refer & earn</h1></div><Gift className="orange-icon" size={25} /></header><section className="referral-hero"><div className="referral-hero-copy"><span className="eyebrow light">YOUR REFERRAL CODE</span><h2>{code}</h2><p>Invite a friend to Bhartiya Bazar. They get ₹10 off their first order, and you earn ₹{bonus} when they complete it.</p><div className="referral-link-row"><span>{link}</span><button onClick={copyLink}>{copied ? <Check size={15} /> : <Copy size={15} />}</button></div><div className="referral-share-row"><button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Join me on Bhartiya Bazar: ${link}`)}`, "_blank")}><MessageCircle size={15} /> WhatsApp</button><button onClick={copyLink}><Link2 size={15} /> Copy link</button></div></div><div className="qr-card"><div className="qr-frame"><QRCodeCanvas ref={qrRef} value={link} size={152} bgColor="#ffffff" fgColor="#123f24" includeMargin imageSettings={{ src: "/favicon.ico", height: 28, width: 28, excavate: true }} /></div><b>Scan to join</b><button onClick={downloadQr}><Download size={14} /> Download QR</button></div></section><div className="referral-stats"><Stat icon={Users} label="Total referrals" value="5" /><Stat icon={IndianRupee} label="Total earning" value="₹100" green /><Stat icon={Gift} label="Pending" value="₹20" yellow /></div><section className="referral-how"><span className="eyebrow">HOW IT WORKS</span><h2>Small invite, big impact.</h2><div className="steps"><div><b>01</b><span>Share your code</span><small>Send your link or QR to friends.</small></div><div><b>02</b><span>They shop local</span><small>They sign up and place a paid first order.</small></div><div><b>03</b><span>You earn ₹{bonus}</span><small>Your wallet updates automatically.</small></div></div></section><section className="referral-history"><div className="section-heading compact"><div><span className="eyebrow">YOUR NETWORK</span><h2>Referral history</h2></div><span className="muted">5 people</span></div><div className="history-table"><div className="history-row history-head"><span>Name</span><span>Phone</span><span>Joined</span><span>Earning</span><span>Status</span></div>{[["Priya Sharma", "98••• 4120", "09 Sep 2026", "₹20", "Completed"], ["Mohan Lal", "97••• 8012", "05 Sep 2026", "₹20", "Completed"], ["Asha Verma", "99••• 2871", "01 Sep 2026", "₹20", "Completed"], ["Ravi Singh", "96••• 5548", "28 Aug 2026", "₹20", "Completed"], ["Neha Jain", "98••• 9031", "Today", `₹${bonus}`, "Pending"]].map(row => <div className="history-row" key={row[0]}>{row.map((cell, i) => <span className={i === 4 ? (cell === "Completed" ? "history-status completed" : "history-status pending") : i === 3 ? "earning" : ""} key={i}>{cell}</span>)}</div>)}</div></section></div>;
+}
+function Stat({ icon: Icon, label, value, green, yellow }: any) { return <div className="referral-stat"><span className={`referral-stat-icon ${green ? "green" : yellow ? "yellow" : ""}`}><Icon size={17} /></span><small>{label}</small><b>{value}</b></div>; }
