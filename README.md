@@ -31,3 +31,4 @@ service cloud.firestore {
 ```
 
 This rule is intentionally insecure and must be replaced before production. Product photos upload to `shops/{shopId}/products/{timestamp}_{filename}` through `uploadProductPhoto()`.
+.
